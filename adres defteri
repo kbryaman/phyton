@@ -1,0 +1,246 @@
+import sqlite3
+import tkinter as tk
+from msilib import Table
+from tkinter import *
+from tkinter import messagebox
+import sqlite3 as sql
+root = Tk() #tk dediğimiz bizim ilk başta açılan ekran,çerceveyi oluşturur.
+root.title("Telefon Defteri") #açılan penceremizdeki isim
+root.geometry("800x600")
+
+baglanti = sql.connect("adres_defteri.db") #veritabanıyla bağlantımızı oluşturuyoruz
+im = baglanti.cursor() #cursor dediğimiz şey ise oluşturduğumuz database deki verileri tablo içerisinde göstermesine yardımcı oluyor.
+im.execute("CREATE TABLE IF NOT EXISTS adres_defteri(id INTEGER PRIMARY KEY AUTOINCREMENT,adi_soyadi text, telefon int,note text)")
+#execute dediğimiz şey ise şu tırnakla yazılan kısım bir sql dilini çalıştırmaya yarıyor.
+#im.execute("INSERT INTO adres_defteri(id,adi_soyadi,telefon,note) values(?,?,?,?)", (1,'Ali',5556095599,'Test Kaydı'))
+adres_defteri = [] #açma kapama parantezi ile liste oluşturmasını istiyoruz
+
+def cikis():
+    root.destroy() #root neydi çerçevemizdi o çerçeveyi destroy i et yani kapat
+
+def temizle(): #adı soyadı girilen kısımlardaki verileri kaydettikten sonra temizlemek için kullanıyoruz
+    e1.delete(0, "end")
+    e2.delete(0, "end")
+    e3.delete(0, "end")
+    e4.delete(0, "end")
+
+def kaydet():
+    adi = e1.get()
+    tel = e2.get()
+    note = e4.get()
+    if len(adi) == 0:
+    # buradaki iki nokta öyleyse anlamında kullanılır bu phyton dilinde bu şekilde
+        messagebox.showinfo("Bilgiler Boş", "Lütfen alanları doldurup eklemeyi deneyin")
+    else:
+        adres_defteri.append(adi)
+        im.execute("INSERT INTO adres_defteri(adi_soyadi,telefon,note) values(?,?,?)", (adi,tel,note))
+        e1.delete(0, "end")
+        e2.delete(0, "end")
+        e4.delete(0, "end") # bu üç satır bilgileri girdikten sonra birden fazla aynı bilgileri girmesiini engellemek için
+        messagebox.showinfo("İşlem Başarılı","Bilgiler Başarıyla Kaydedildi.")
+        baglanti.commit() #sonra bu bilgileri cimmit ediyorum yani kaydediyorum
+
+
+Tbl = []
+
+def tablo_doldur(a): # tabloyu normal bir şekilde dolduruyor
+    if a == 1:
+        im.execute("SELECT * FROM adres_defteri")
+
+    elif a==2: #tabloyu sıralı bir şekilde doldurmamızı sağlyor
+        im.execute("SELECT * FROM adres_defteri order by adi_soyadi")
+    rows = im.fetchall()
+    Tbl = rows
+
+    return Tbl
+
+
+vtablo = tablo_doldur(1)
+
+
+
+def tablo2(): #sıralanmış halini ekrandaki listede göstermeye yarıyor.
+    vtablo = tablo_doldur(2)
+
+    Table(frame_alt_sag, vtablo)
+
+
+def isme_göre_ara():
+    temizle()
+    adi_soyadi = e6.get()
+    im.execute("SELECT * FROM adres_defteri where adi_soyadi like '%"+adi_soyadi+"%' limit 1")
+    rows= im.fetchall()
+    tut = rows[:1]
+    listut = tut[0]
+    idtut = listut[0:1]
+    listedenal1 = listut[1:2]
+    listedenal2 = listut[2:3]
+    listedenal3 = listut[3:4]
+    e1.insert('end', listedenal1)
+    e2.insert('end', listedenal2)
+    e4.insert('end', listedenal3)
+
+def telefona_gore_ara():
+    temizle()
+    telefon_no = e7.get()
+    im.execute("SELECT * FROM adres_defteri where telefon like '%" + telefon_no + "%' limit 1")
+   # like komutuna burada değinmek istiyorum (uygulamayı gösterdikten sonra) like komutu ile sql içerisinde eşittir değilde like kullanmamız gerekir.
+    rows = im.fetchall()
+    tut = rows[:1]
+    listut = tut[0]
+    listedenal1 = listut[1:2]
+    listedenal2 = listut[2:3]
+    listedenal3 = listut[3:4]
+    print(listedenal1)
+    print(listedenal2)
+    print(listedenal3)
+    e1.insert('end', listedenal1)
+    e2.insert('end', listedenal2)
+    e4.insert('end', listedenal3)
+
+    utut = len(tut[0])
+    atut = tut[0:1]
+    print(utut)
+    print(atut)
+
+
+
+
+
+def Enterbas(event):
+    isme_göre_ara()
+
+def Enterbastelefon(event):
+    telefona_gore_ara()
+
+
+#def kaydisil(): ÇALIŞMADI!!!
+    #adis = e1.get()
+    #isme_göre_ara
+    #import sqlite3
+    #im = sqlite3.connect('adres_defteri.db')
+    #im.execute("DELETE from adres_defteri where ID=;");
+    #baglanti.commit()
+    #print("Kayit Basariyla Silinmistir");
+    #im.close()
+
+
+
+
+cerceve1 =Label(root,borderwidth=1, relief='solid',width=78,height=12)
+cerceve2 =Label(root,borderwidth=1, relief='solid',width=30,height=12)
+cerceve3 =Label(root,borderwidth=1, relief='solid',width=65,height=12)
+cerceve1.place(x=30,y=77)
+cerceve2.place(x=30,y=280)
+cerceve3.place(x=280,y=280)
+
+l1 = Label(root, text="Adres Defteri",font=('Arial', 16,'bold'))
+l2 = Label(root, text="Adı Soyadı",font=('Arial', 10,'bold'))
+l3 = Label(root, text="Telefon Numarası",font=('Arial', 10,'bold'))
+l4 = Label(root, text="Fotoğraf",font=('Arial', 10,'bold'))
+l5 = Label(root, text="Not",font=('Arial', 10,'bold'))
+l6 = Label(root, text="İsme Göre Ara:",font=('Arial', 10,'bold'))
+l7 = Label(root, text="Telefona Göre Ara:",font=('Arial', 10,'bold'))
+
+e1 = Entry(root, width=45, font=('Arial', 11))
+e2 = Entry(root,width=45, font=('Arial', 11))
+e3 = Entry(root, width=28 ,font=('Arial', 11))
+e4 = Entry(root, width=45, font=('Arial', 11))
+e5 = Entry(root, width=60)
+e6 = Entry(root, width=15, font=('Arial', 10))
+e7 = Entry(root, width=15, font=('Arial', 10))
+
+t = Listbox(root, height=10, selectmode='SINGLE')
+b1 = Button(root, text="Yeni Kayıt Ekle", width=20,bg='yellow', fg='black', command=temizle,font=('Arial', 10,'bold'))
+b2 = Button(root, text="Kaydı Sil", width=20,bg='yellow', fg='black',font=('Arial', 10,'bold'))
+b3 = Button(root, text="Kaydı Düzenle", width=20,bg='yellow', fg='black', font=('Arial', 10,'bold'))
+b4 = Button(root, text="İsme göre sırala", width=20,bg='yellow', fg='black', command=tablo2 ,font=('Arial', 10,'bold'))
+b5 = Button(root, text="Çıkış", width=20, command=cikis,font=('Arial', 10,'bold'),bg='yellow', fg='black')
+b6 = Button(root, text="Kaydet", width=20, bg='yellow', fg='red',font=('Arial', 9,'bold'),command=kaydet)
+b7 = Button(root, text="Gözat", width=16, bg='yellow', fg='black' ,font=('Arial', 9,'bold'),command=isme_göre_ara)
+
+
+l1.place(x=50, y=20)
+l2.place(x=50, y=100)
+l3.place(x=50, y=130)
+l4.place(x=50, y=160)
+l5.place(x=50, y=190)
+l6.place(x=340, y=20)
+l7.place(x=340, y=50)
+
+e1.place(x=169, y=100,height =25)
+e2.place(x=169, y=130,height =25)
+e3.place(x=169, y=160,height =25)
+e4.place(x=169, y=190,height =25)
+e6.place(x=470, y=20,height =20)
+e7.place(x=470, y=50,height =20)
+
+b1.place(x=50, y=300)
+b2.place(x=50, y=330)
+b3.place(x=50, y=360)
+b4.place(x=50, y=390)
+b5.place(x=50, y=420)
+b6.place(x=384, y=220)
+b7.place(x=411, y=160)
+t.place(x=600, y=85)
+
+frame_alt_sag = Frame(root) #tabloyu sağ alt köşeye gelmesi için
+frame_alt_sag.place(x=295, y=320, width=430, height=105)
+
+frame_alt_baslik = Frame(root)
+frame_alt_baslik.place(x=295, y=297, width=430, height=23)
+
+lbaslik1 =Label(frame_alt_baslik, text="ID", font=('Arial', 13),width=4,borderwidth=1, relief='solid')
+lbaslik2 =Label(frame_alt_baslik, text="Adı Soyadı", font=('Arial', 13),width=18,borderwidth=1, relief='solid')
+lbaslik3 =Label(frame_alt_baslik, text="Telefon", font=('Arial', 13),width=13,borderwidth=1, relief='solid')
+lbaslik4 =Label(frame_alt_baslik, text="Not", font=('Arial', 13),width=14,borderwidth=1, relief='solid')
+
+lbaslik1.place(x=0, y=0) #place dediğimiz de ekrandaki konumu
+lbaslik2.place(x=36, y=0)
+lbaslik3.place(x=184, y=0)
+lbaslik4.place(x=300, y=0)
+
+#isme göre ara
+e6.bind('<Return>', Enterbas)
+#telefona göre ara
+e7.bind('<Return>', Enterbastelefon)
+
+class Table: #satır ve sütunları oluşturduğumuz kodlar
+    def __init__(self, root, vtablo):
+        # Tablo oluştur
+        for i in range(total_rows):
+            for j in range(total_columns):
+                if j == 0:
+                    self.e = Entry(root, width=4, fg='black',
+                               font=('Arial', 11))
+                elif j == 1:
+                    self.e = Entry(root, width=18, fg='black',
+                                   font=('Arial', 11))
+                elif j == 2:
+                    self.e = Entry(root, width=14, fg='black',
+                                   font=('Arial', 11))
+                elif j == 3:
+                    self.e = Entry(root, width=16, fg='black',
+                                   font=('Arial', 11))
+                else :
+                    self.e = Entry(root, width=10,fg='black',
+                               font=('Arial', 11))
+
+                self.e.grid(row=i, column=j)
+                # Verileri al
+                self.e.insert(END, vtablo[i][j])
+
+
+# Satır sayısı
+# Tablodaki kolonların sayısı
+
+total_rows = len(vtablo)
+total_columns = len(vtablo[0])
+
+#Tablo Penceresi Oluştur
+Table(frame_alt_sag, vtablo)
+
+root.mainloop()
+
+baglanti.commit()
+baglanti.close()
